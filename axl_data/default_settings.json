@@ -1,0 +1,17 @@
+{
+  "tab1_default_data_type": "안축장",
+  "tab1_default_input_method": "텍스트입력",
+  "tab1_default_axl_od": 23.0,
+  "tab1_default_axl_os": 23.0,
+  "tab1_default_re_od": -2.0,
+  "tab1_default_re_os": -2.0,
+  "tab1_default_k_od": 43.0,
+  "tab1_default_k_os": 43.0,
+  "tab1_default_ct_od": 540,
+  "tab1_default_ct_os": 540,
+  "tab1_default_remarks": [],
+  "tab2_default_graph_type": "안축장",
+  "tab3_default_analyze_re": true,
+  "tab3_default_model_choice": "회귀(선형/로그)",
+  "tab3_default_trend_mode": "선형(Linear)"
+}
