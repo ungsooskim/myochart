@@ -780,23 +780,153 @@ if not is_logged_in():
     col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
         if st.button("🔑 로그인", use_container_width=True):
-            st.switch_page("pages/login.py")
+            st.session_state.show_login = True
+            st.rerun()
     with col2:
         if st.button("📝 회원가입", use_container_width=True):
-            st.switch_page("pages/register.py")
+            st.session_state.show_register = True
+            st.rerun()
     with col3:
         if st.button("🔍 데모 체험", use_container_width=True):
             create_demo_user()
             st.rerun()
     
-    st.markdown("---")
-    st.markdown("### 📋 서비스 안내")
-    st.markdown("""
-    - **개인 데이터 보호**: 본인만의 데이터에 접근 가능
-    - **안전한 저장**: 모든 데이터는 암호화되어 저장
-    - **의료 목적**: 성장 추이 분석 및 예측 서비스
-    - **데모 체험**: 로그인 없이 샘플 데이터로 체험 가능
-    """)
+    # 로그인/회원가입 폼 표시
+    if st.session_state.get('show_login'):
+        st.markdown("---")
+        st.markdown("### 🔑 로그인")
+        
+        with st.form("login_form"):
+            username = st.text_input("사용자명 또는 이메일", placeholder="사용자명 또는 이메일을 입력하세요")
+            password = st.text_input("비밀번호", type="password", placeholder="비밀번호를 입력하세요")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                login_submitted = st.form_submit_button("로그인", use_container_width=True)
+            with col2:
+                demo_submitted = st.form_submit_button("데모 로그인", use_container_width=True)
+        
+        if login_submitted:
+            if username and password:
+                from auth import authenticate_user, save_user_session, find_user_by_email
+                # 이메일로 로그인 시도
+                user = authenticate_user(username, password)
+                if not user:
+                    # 이메일로 사용자 찾기
+                    email_user = find_user_by_email(username)
+                    if email_user:
+                        user = authenticate_user(email_user['username'], password)
+                
+                if user:
+                    save_user_session(user)
+                    st.success("로그인 성공!")
+                    st.rerun()
+                else:
+                    st.error("사용자명/이메일 또는 비밀번호가 올바르지 않습니다.")
+            else:
+                st.error("모든 필드를 입력해주세요.")
+        
+        if demo_submitted:
+            create_demo_user()
+            st.success("데모 계정으로 로그인했습니다!")
+            st.rerun()
+        
+        if st.button("← 돌아가기"):
+            st.session_state.show_login = False
+            st.rerun()
+    
+    elif st.session_state.get('show_register'):
+        st.markdown("---")
+        st.markdown("### 📝 회원가입")
+        
+        with st.form("register_form"):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                username = st.text_input("사용자명 *", placeholder="사용자명을 입력하세요")
+                email = st.text_input("이메일 *", placeholder="이메일을 입력하세요")
+                password = st.text_input("비밀번호 *", type="password", placeholder="비밀번호를 입력하세요 (최소 6자)")
+                confirm_password = st.text_input("비밀번호 확인 *", type="password", placeholder="비밀번호를 다시 입력하세요")
+            
+            with col2:
+                full_name = st.text_input("실명 *", placeholder="실명을 입력하세요")
+                birth_date = st.date_input("생년월일 *", value=date(2010, 1, 1), max_value=date.today())
+                gender = st.selectbox("성별 *", ["", "남", "여"])
+            
+            submitted = st.form_submit_button("회원가입", use_container_width=True)
+        
+        if submitted:
+            from auth import save_user, load_user, find_user_by_email
+            # 유효성 검사
+            errors = []
+            
+            if not username:
+                errors.append("사용자명을 입력해주세요.")
+            elif len(username) < 3:
+                errors.append("사용자명은 최소 3자 이상이어야 합니다.")
+            elif load_user(username):
+                errors.append("이미 존재하는 사용자명입니다.")
+            
+            if not email:
+                errors.append("이메일을 입력해주세요.")
+            elif "@" not in email:
+                errors.append("올바른 이메일 형식을 입력해주세요.")
+            elif find_user_by_email(email):
+                errors.append("이미 등록된 이메일입니다.")
+            
+            if not password:
+                errors.append("비밀번호를 입력해주세요.")
+            elif len(password) < 6:
+                errors.append("비밀번호는 최소 6자 이상이어야 합니다.")
+            
+            if password != confirm_password:
+                errors.append("비밀번호가 일치하지 않습니다.")
+            
+            if not full_name:
+                errors.append("실명을 입력해주세요.")
+            
+            if not gender:
+                errors.append("성별을 선택해주세요.")
+            
+            if birth_date >= date.today():
+                errors.append("생년월일은 오늘 이전이어야 합니다.")
+            
+            if errors:
+                for error in errors:
+                    st.error(error)
+            else:
+                # 사용자 데이터 생성
+                user_data = {
+                    'username': username,
+                    'email': email,
+                    'password': password,
+                    'fullName': full_name,
+                    'birthDate': birth_date.isoformat(),
+                    'gender': gender
+                }
+                
+                # 사용자 저장
+                if save_user(user_data):
+                    st.success("회원가입이 완료되었습니다! 로그인해주세요.")
+                    st.session_state.show_register = False
+                    st.session_state.show_login = True
+                    st.rerun()
+                else:
+                    st.error("회원가입 중 오류가 발생했습니다. 다시 시도해주세요.")
+        
+        if st.button("← 돌아가기"):
+            st.session_state.show_register = False
+            st.rerun()
+    
+    else:
+        st.markdown("---")
+        st.markdown("### 📋 서비스 안내")
+        st.markdown("""
+        - **개인 데이터 보호**: 본인만의 데이터에 접근 가능
+        - **안전한 저장**: 모든 데이터는 암호화되어 저장
+        - **의료 목적**: 성장 추이 분석 및 예측 서비스
+        - **데모 체험**: 로그인 없이 샘플 데이터로 체험 가능
+        """)
     
     st.stop()
 
@@ -892,8 +1022,14 @@ with st.sidebar:
     st.caption(f"ID: {user.get('username', 'demo')}")
     
     if st.button("🚪 로그아웃", use_container_width=True):
-        from auth import clear_user_session
-        clear_user_session()
+        try:
+            from auth import clear_user_session
+            clear_user_session()
+        except:
+            # auth 모듈이 없는 경우 세션만 클리어
+            for key in list(st.session_state.keys()):
+                if key.startswith('user'):
+                    del st.session_state[key]
         st.rerun()
     
     st.markdown("---")
