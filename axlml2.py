@@ -840,12 +840,12 @@ if not is_logged_in():
         </script>
         """, height=0)
         
+        # 저장된 로그인 정보 불러오기 (폼 외부에서)
+        saved_username = st.session_state.get('saved_username', '')
+        saved_password = st.session_state.get('saved_password', '')
+        remember_login = st.session_state.get('remember_login', False)
+        
         with st.form("login_form"):
-            # 저장된 로그인 정보 불러오기
-            saved_username = st.session_state.get('saved_username', '')
-            saved_password = st.session_state.get('saved_password', '')
-            remember_login = st.session_state.get('remember_login', False)
-            
             username = st.text_input("사용자명 또는 이메일", 
                                    value=saved_username,
                                    placeholder="사용자명 또는 이메일을 입력하세요",
@@ -881,7 +881,10 @@ if not is_logged_in():
                         user = authenticate_user(email_user['username'], password)
                 
                 if user:
-                    # 로그인 정보 저장 처리
+                    save_user_session(user)
+                    st.success("로그인 성공!")
+                    
+                    # 로그인 정보 저장 처리 (폼 제출 후)
                     if remember_login:
                         st.session_state.saved_username = username
                         st.session_state.saved_password = password
@@ -912,8 +915,6 @@ if not is_logged_in():
                         </script>
                         """, height=0)
                     
-                    save_user_session(user)
-                    st.success("로그인 성공!")
                     st.rerun()
                 else:
                     st.error("사용자명/이메일 또는 비밀번호가 올바르지 않습니다.")
