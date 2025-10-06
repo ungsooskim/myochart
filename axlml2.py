@@ -1347,21 +1347,6 @@ with st.sidebar:
         if ok:
             st.success(f"✅ 환자 데이터 불러오기 성공: {pid}")
             
-            # 불러온 환자 정보 표시
-            if st.session_state.meta.get("name"):
-                st.info(f"👤 환자명: {st.session_state.meta.get('name')}")
-            if st.session_state.meta.get("dob"):
-                st.info(f"📅 생년월일: {st.session_state.meta.get('dob')}")
-            if st.session_state.meta.get("sex"):
-                st.info(f"👥 성별: {st.session_state.meta.get('sex')}")
-            
-            # 데이터 개수 표시
-            axl_count = len(st.session_state.data_axl)
-            re_count = len(st.session_state.data_re)
-            k_count = len(st.session_state.data_k)
-            ct_count = len(st.session_state.data_ct)
-            st.info(f"📊 데이터 개수 - 안축장: {axl_count}개, 굴절이상: {re_count}개, 각막곡률: {k_count}개, 각막두께: {ct_count}개")
-            
             # 환자 정보가 성공적으로 불러와졌는지 확인
             if st.session_state.meta.get("name"):
                 st.success(f"🎉 환자 '{st.session_state.meta.get('name')}'의 데이터가 성공적으로 불러와졌습니다!")
@@ -1389,20 +1374,8 @@ if (st.session_state.previous_name != name or
 
 # 환자 불러오기 후 환자 정보가 제대로 표시되도록 하는 로직
 # 이 로직은 폼 외부에서 실행되어야 함
-if st.session_state.meta.get("name"):
-    # 환자 정보가 성공적으로 불러와졌는지 확인
-    st.success(f"🎉 환자 '{st.session_state.meta.get('name')}'의 정보가 불러와졌습니다!")
-    if st.session_state.meta.get("dob"):
-        st.info(f"📅 생년월일: {st.session_state.meta.get('dob')}")
-    if st.session_state.meta.get("sex"):
-        st.info(f"👥 성별: {st.session_state.meta.get('sex')}")
-    
-    # 데이터 개수 표시
-    axl_count = len(st.session_state.data_axl)
-    re_count = len(st.session_state.data_re)
-    k_count = len(st.session_state.data_k)
-    ct_count = len(st.session_state.data_ct)
-    st.info(f"📊 데이터 개수 - 안축장: {axl_count}개, 굴절이상: {re_count}개, 각막곡률: {k_count}개, 각막두께: {ct_count}개")
+# 메인페이지에서 중복 표시를 방지하기 위해 제거됨
+# 환자 정보는 불러오기 버튼 클릭 시에만 표시됨
 
 # =========================
 #  메인 UI - 탭 기반 구조로 개선
