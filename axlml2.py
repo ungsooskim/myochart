@@ -1562,14 +1562,24 @@ with tab2:
                 # 환자 나이 계산
                 patient_ages = df["date"].apply(lambda d: _years_between(pd.Timestamp(dob), d))
                 
-                # 환자 데이터 저장
-                if not df['OD_mm'].isna().all():
-                    patient_od_data = df[['OD_mm']].dropna()
-                    patient_od_ages = patient_ages[df['OD_mm'].notna()]
+                # 마이너스 나이 필터링 (미래 날짜 제거)
+                valid_age_mask = patient_ages >= 0
+                if not valid_age_mask.all():
+                    invalid_count = (~valid_age_mask).sum()
+                    st.warning(f"⚠️ {invalid_count}개의 미래 날짜 데이터가 제외되었습니다. (생년월일 이후 날짜)")
                 
-                if not df['OS_mm'].isna().all():
-                    patient_os_data = df[['OS_mm']].dropna()
-                    patient_os_ages = patient_ages[df['OS_mm'].notna()]
+                # 유효한 나이만 사용
+                patient_ages = patient_ages[valid_age_mask]
+                df_filtered = df[valid_age_mask]
+                
+                # 환자 데이터 저장 (필터링된 데이터 사용)
+                if not df_filtered['OD_mm'].isna().all():
+                    patient_od_data = df_filtered[['OD_mm']].dropna()
+                    patient_od_ages = patient_ages[df_filtered['OD_mm'].notna()]
+                
+                if not df_filtered['OS_mm'].isna().all():
+                    patient_os_data = df_filtered[['OS_mm']].dropna()
+                    patient_os_ages = patient_ages[df_filtered['OS_mm'].notna()]
             elif not df.empty and ('OD_mm' in df.columns or 'OS_mm' in df.columns):
                 # 생년월일이 없는 경우 날짜 기준으로 표시
                 if not df['OD_mm'].isna().all():
@@ -1800,12 +1810,17 @@ with tab2:
                         if dob is not None:
                             # 나이 기준으로 +3개월 (0.25년)
                             patient_ages = df["date"].apply(lambda d: _years_between(pd.Timestamp(dob), d))
-                            max_age = patient_ages.max()
-                            target_age = max_age + 0.25  # +3개월
-                            
-                            # X축 범위를 환자 데이터의 첫 데이터 -3개월 ~ 마지막 데이터 +3개월로 설정
-                            min_age = patient_ages.min()
-                            fig.update_xaxes(range=[min_age - 0.25, target_age])
+                            # 마이너스 나이 필터링
+                            valid_ages = patient_ages[patient_ages >= 0]
+                            if not valid_ages.empty:
+                                max_age = valid_ages.max()
+                                target_age = max_age + 0.25  # +3개월
+                                
+                                # X축 범위를 환자 데이터의 첫 데이터 -3개월 ~ 마지막 데이터 +3개월로 설정
+                                min_age = valid_ages.min()
+                                fig.update_xaxes(range=[min_age - 0.25, target_age])
+                            else:
+                                st.warning("유효한 나이 데이터가 없습니다.")
                         else:
                             # 날짜 기준으로 +3개월
                             target_date = last_date + pd.DateOffset(months=3)
@@ -1825,10 +1840,15 @@ with tab2:
                 patient_dates = df['date'].dropna()
                 if not patient_dates.empty and dob is not None:
                     patient_ages = df["date"].apply(lambda d: _years_between(pd.Timestamp(dob), d))
-                    max_age = patient_ages.max()
-                    target_age = max_age + 0.25
-                    min_age = patient_ages.min()
-                    fig.update_xaxes(range=[min_age - 0.25, target_age])
+                    # 마이너스 나이 필터링
+                    valid_ages = patient_ages[patient_ages >= 0]
+                    if not valid_ages.empty:
+                        max_age = valid_ages.max()
+                        target_age = max_age + 0.25
+                        min_age = valid_ages.min()
+                        fig.update_xaxes(range=[min_age - 0.25, target_age])
+                    else:
+                        fig.update_xaxes(range=[4, 18])
                 elif not patient_dates.empty:
                     last_date = patient_dates.max()
                     target_date = last_date + pd.DateOffset(months=3)
@@ -1869,6 +1889,31 @@ with tab2:
                         st.write("OD_mm 데이터:", df['OD_mm'].dropna().tolist())
                     if 'OS_mm' in df.columns:
                         st.write("OS_mm 데이터:", df['OS_mm'].dropna().tolist())
+                    
+                    # 나이 계산 디버깅
+                    if dob is not None and 'date' in df.columns:
+                        st.write("=== 나이 계산 디버깅 ===")
+                        st.write(f"생년월일: {dob}")
+                        sample_dates = df['date'].dropna().head(5)
+                        st.write("샘플 날짜들:", sample_dates.tolist())
+                        
+                        # 나이 계산 결과 확인
+                        ages = df["date"].apply(lambda d: _years_between(pd.Timestamp(dob), d))
+                        st.write("계산된 나이들:", ages.dropna().tolist())
+                        st.write("나이 범위:", f"{ages.min():.2f} ~ {ages.max():.2f}세")
+                        
+                        # 마이너스 나이가 있는지 확인
+                        negative_ages = ages[ages < 0]
+                        if not negative_ages.empty:
+                            st.error(f"⚠️ 마이너스 나이 발견: {negative_ages.tolist()}")
+                            st.write("해당 날짜들:", df.loc[negative_ages.index, 'date'].tolist())
+                        
+                        # OD/OS 데이터와 나이 매칭 확인
+                        if patient_od_ages is not None:
+                            st.write("OD 나이들:", patient_od_ages.tolist())
+                        if patient_os_ages is not None:
+                            st.write("OS 나이들:", patient_os_ages.tolist())
+                
                 st.write(f"차트 트레이스 수: {len(fig.data)}")
             
             # 차트가 비어있는지 확인
@@ -2029,16 +2074,25 @@ with tab2:
             # 나이 계산
             if dob is not None:
                 patient_ages = df["date"].apply(lambda d: _years_between(pd.Timestamp(dob), d))
-                x_data = patient_ages
+                # 마이너스 나이 필터링
+                valid_age_mask = patient_ages >= 0
+                if not valid_age_mask.all():
+                    invalid_count = (~valid_age_mask).sum()
+                    st.warning(f"⚠️ 굴절이상 차트: {invalid_count}개의 미래 날짜 데이터가 제외되었습니다.")
+                
+                # 유효한 데이터만 사용
+                df_filtered = df[valid_age_mask]
+                x_data = patient_ages[valid_age_mask]
                 x_title = "나이 (연)"
             else:
+                df_filtered = df
                 x_data = df["date"]
                 x_title = "날짜"
             
             # Plotly 차트
             fig = go.Figure()
-            fig.add_trace(go.Scatter(x=x_data, y=df["OD_SE"], mode="lines+markers", name="우안 SE"))
-            fig.add_trace(go.Scatter(x=x_data, y=df["OS_SE"], mode="lines+markers", name="좌안 SE"))
+            fig.add_trace(go.Scatter(x=x_data, y=df_filtered["OD_SE"], mode="lines+markers", name="우안 SE"))
+            fig.add_trace(go.Scatter(x=x_data, y=df_filtered["OS_SE"], mode="lines+markers", name="좌안 SE"))
             
             # 레이아웃 설정
             fig.update_layout(
@@ -2262,17 +2316,35 @@ with tab2:
             if dob is not None:
                 axl_ages = df_axl["date"].apply(lambda d: _years_between(pd.Timestamp(dob), d))
                 re_ages = df_re["date"].apply(lambda d: _years_between(pd.Timestamp(dob), d))
-                axl_x_data = axl_ages
-                re_x_data = re_ages
+                
+                # 마이너스 나이 필터링
+                axl_valid_mask = axl_ages >= 0
+                re_valid_mask = re_ages >= 0
+                
+                if not axl_valid_mask.all():
+                    invalid_count = (~axl_valid_mask).sum()
+                    st.warning(f"⚠️ 이중축 차트(안축장): {invalid_count}개의 미래 날짜 데이터가 제외되었습니다.")
+                
+                if not re_valid_mask.all():
+                    invalid_count = (~re_valid_mask).sum()
+                    st.warning(f"⚠️ 이중축 차트(굴절이상): {invalid_count}개의 미래 날짜 데이터가 제외되었습니다.")
+                
+                # 유효한 데이터만 사용
+                df_axl_filtered = df_axl[axl_valid_mask]
+                df_re_filtered = df_re[re_valid_mask]
+                axl_x_data = axl_ages[axl_valid_mask]
+                re_x_data = re_ages[re_valid_mask]
                 x_title = "나이 (연)"
             else:
+                df_axl_filtered = df_axl
+                df_re_filtered = df_re
                 axl_x_data = df_axl["date"]
                 re_x_data = df_re["date"]
                 x_title = "날짜"
             
-            # 공통 날짜 찾기
-            axl_dates = set(df_axl["date"].dt.date.astype(str))
-            re_dates = set(df_re["date"].dt.date.astype(str))
+            # 공통 날짜 찾기 (필터링된 데이터 사용)
+            axl_dates = set(df_axl_filtered["date"].dt.date.astype(str))
+            re_dates = set(df_re_filtered["date"].dt.date.astype(str))
             common_dates = axl_dates.intersection(re_dates)
             if len(common_dates) > 0:
                 # 이중축 그래프
@@ -2280,24 +2352,24 @@ with tab2:
                 
                 # 안축장 (왼쪽 Y축)
                 fig.add_trace(go.Scatter(
-                    x=axl_x_data, y=df_axl["OD_mm"], 
+                    x=axl_x_data, y=df_axl_filtered["OD_mm"], 
                     mode="lines+markers", name="OD 안축장 (mm)",
                     yaxis="y"
                 ))
                 fig.add_trace(go.Scatter(
-                    x=axl_x_data, y=df_axl["OS_mm"], 
+                    x=axl_x_data, y=df_axl_filtered["OS_mm"], 
                     mode="lines+markers", name="OS 안축장 (mm)",
                     yaxis="y"
                 ))
                 
                 # 굴절이상 (오른쪽 Y축) - 절대값으로 표시
                 fig.add_trace(go.Scatter(
-                    x=re_x_data, y=abs(df_re["OD_SE"]), 
+                    x=re_x_data, y=abs(df_re_filtered["OD_SE"]), 
                     mode="lines+markers", name="OD SE (D) 절대값",
                     yaxis="y2"
                 ))
                 fig.add_trace(go.Scatter(
-                    x=re_x_data, y=abs(df_re["OS_SE"]), 
+                    x=re_x_data, y=abs(df_re_filtered["OS_SE"]), 
                     mode="lines+markers", name="OS SE (D) 절대값",
                     yaxis="y2"
                 ))
