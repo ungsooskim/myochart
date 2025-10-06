@@ -1209,28 +1209,7 @@ with st.sidebar:
     
     patient_id = st.text_input("환자 ID (저장용)", value=patient_id_default, key="patient_id")
     
-    # 환자 불러오기 후 환자 정보가 제대로 표시되도록 하는 로직
-    if st.session_state.meta.get("name"):
-        # 불러온 환자 정보가 있으면 입력창에 표시
-        if not st.session_state.get("patient_name"):
-            st.session_state.patient_name = st.session_state.meta.get("name")
-        if not st.session_state.get("patient_id"):
-            st.session_state.patient_id = st.session_state.meta.get("name")
-        
-        # 환자 정보가 성공적으로 불러와졌는지 확인
-        if st.session_state.meta.get("name"):
-            st.success(f"🎉 환자 '{st.session_state.meta.get('name')}'의 정보가 불러와졌습니다!")
-            if st.session_state.meta.get("dob"):
-                st.info(f"📅 생년월일: {st.session_state.meta.get('dob')}")
-            if st.session_state.meta.get("sex"):
-                st.info(f"👥 성별: {st.session_state.meta.get('sex')}")
-            
-            # 데이터 개수 표시
-            axl_count = len(st.session_state.data_axl)
-            re_count = len(st.session_state.data_re)
-            k_count = len(st.session_state.data_k)
-            ct_count = len(st.session_state.data_ct)
-            st.info(f"📊 데이터 개수 - 안축장: {axl_count}개, 굴절이상: {re_count}개, 각막곡률: {k_count}개, 각막두께: {ct_count}개")
+    # 환자 불러오기 후 환자 정보가 제대로 표시되도록 하는 로직은 폼 외부에서 처리됨
     
     # 성별 추가 (둘 중 하나만 선택)
     st.markdown("**성별**")
@@ -1409,18 +1388,21 @@ if (st.session_state.previous_name != name or
     st.session_state.previous_patient_id = patient_id
 
 # 환자 불러오기 후 환자 정보가 제대로 표시되도록 하는 로직
-if st.session_state.meta.get("name") and not name:
-    # 불러온 환자 정보가 있지만 입력창이 비어있는 경우, 불러온 정보로 채우기
-    st.session_state.patient_name = st.session_state.meta.get("name")
-    st.session_state.patient_id = st.session_state.meta.get("name")  # 기본적으로 이름을 ID로 사용
-
-# 환자 불러오기 후 환자 정보가 제대로 표시되도록 하는 추가 로직
+# 이 로직은 폼 외부에서 실행되어야 함
 if st.session_state.meta.get("name"):
-    # 불러온 환자 정보가 있으면 입력창에 표시
-    if not st.session_state.get("patient_name"):
-        st.session_state.patient_name = st.session_state.meta.get("name")
-    if not st.session_state.get("patient_id"):
-        st.session_state.patient_id = st.session_state.meta.get("name")
+    # 환자 정보가 성공적으로 불러와졌는지 확인
+    st.success(f"🎉 환자 '{st.session_state.meta.get('name')}'의 정보가 불러와졌습니다!")
+    if st.session_state.meta.get("dob"):
+        st.info(f"📅 생년월일: {st.session_state.meta.get('dob')}")
+    if st.session_state.meta.get("sex"):
+        st.info(f"👥 성별: {st.session_state.meta.get('sex')}")
+    
+    # 데이터 개수 표시
+    axl_count = len(st.session_state.data_axl)
+    re_count = len(st.session_state.data_re)
+    k_count = len(st.session_state.data_k)
+    ct_count = len(st.session_state.data_ct)
+    st.info(f"📊 데이터 개수 - 안축장: {axl_count}개, 굴절이상: {re_count}개, 각막곡률: {k_count}개, 각막두께: {ct_count}개")
 
 # =========================
 #  메인 UI - 탭 기반 구조로 개선
