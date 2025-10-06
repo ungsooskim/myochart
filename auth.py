@@ -7,7 +7,7 @@ import hashlib
 import secrets
 from datetime import datetime, date
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import streamlit as st
 
 # 사용자 데이터 저장 경로
