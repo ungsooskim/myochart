@@ -267,7 +267,13 @@ def load_bundle(pid: str):
     if not pdir.exists():
         return False, f"폴더가 없습니다: {pdir}"
 
-    # AXL
+    # 기존 데이터 완전히 초기화
+    st.session_state.data_axl = pd.DataFrame(columns=["date","OD_mm","OS_mm","OD_K1","OD_K2","OD_meanK","OS_K1","OS_K2","OS_meanK","remarks"]).astype({"date":"datetime64[ns]","OD_mm":"float64","OS_mm":"float64","OD_K1":"float64","OD_K2":"float64","OD_meanK":"float64","OS_K1":"float64","OS_K2":"float64","OS_meanK":"float64","remarks":"object"})
+    st.session_state.data_re = pd.DataFrame(columns=["date","OD_sph","OD_cyl","OD_axis","OS_sph","OS_cyl","OS_axis","OD_SE","OS_SE","remarks"]).astype({"date":"datetime64[ns]","OD_sph":"float64","OD_cyl":"float64","OD_axis":"float64","OS_sph":"float64","OS_cyl":"float64","OS_axis":"float64","OD_SE":"float64","OS_SE":"float64","remarks":"object"})
+    st.session_state.data_k = pd.DataFrame(columns=["date","OD_K1","OD_K2","OD_meanK","OS_K1","OS_K2","OS_meanK","remarks"]).astype({"date":"datetime64[ns]","OD_K1":"float64","OD_K2":"float64","OD_meanK":"float64","OS_K1":"float64","OS_K2":"float64","OS_meanK":"float64","remarks":"object"})
+    st.session_state.data_ct = pd.DataFrame(columns=["date","OD_ct","OS_ct","remarks"]).astype({"date":"datetime64[ns]","OD_ct":"float64","OS_ct":"float64","remarks":"object"})
+
+    # AXL 데이터 로드
     f_axl = pdir / "data.csv"
     if f_axl.exists() and f_axl.stat().st_size > 0:
         df_axl = pd.read_csv(f_axl, na_filter=False)
@@ -280,10 +286,8 @@ def load_bundle(pid: str):
         for c in ["OD_mm", "OS_mm", "OD_K1", "OD_K2", "OD_meanK", "OS_K1", "OS_K2", "OS_meanK"]:
             if c not in df_axl.columns: df_axl[c] = np.nan
         st.session_state.data_axl = df_axl[["date","OD_mm","OS_mm","OD_K1","OD_K2","OD_meanK","OS_K1","OS_K2","OS_meanK","remarks"]].sort_values("date")
-    else:
-        st.session_state.data_axl = pd.DataFrame(columns=["date","OD_mm","OS_mm","OD_K1","OD_K2","OD_meanK","OS_K1","OS_K2","OS_meanK","remarks"]).astype({"date":"datetime64[ns]","OD_mm":"float64","OS_mm":"float64","OD_K1":"float64","OD_K2":"float64","OD_meanK":"float64","OS_K1":"float64","OS_K2":"float64","OS_meanK":"float64","remarks":"object"})
 
-    # RE
+    # RE 데이터 로드
     f_re = pdir / "re_data.csv"
     if f_re.exists() and f_re.stat().st_size > 0:
         df_re = pd.read_csv(f_re, na_filter=False)
@@ -297,14 +301,8 @@ def load_bundle(pid: str):
             if c not in df_re.columns:
                 df_re[c] = np.nan
         st.session_state.data_re = df_re[["date","OD_sph","OD_cyl","OD_axis","OS_sph","OS_cyl","OS_axis","OD_SE","OS_SE","remarks"]].sort_values("date")
-    else:
-        st.session_state.data_re = pd.DataFrame(
-            columns=["date","OD_sph","OD_cyl","OD_axis","OS_sph","OS_cyl","OS_axis","OD_SE","OS_SE","remarks"]
-        ).astype({"date":"datetime64[ns]","OD_sph":"float64","OD_cyl":"float64","OD_axis":"float64",
-                  "OS_sph":"float64","OS_cyl":"float64","OS_axis":"float64",
-                  "OD_SE":"float64","OS_SE":"float64","remarks":"object"})
 
-    # 각막곡률
+    # 각막곡률 데이터 로드
     f_k = pdir / "k_data.csv"
     if f_k.exists() and f_k.stat().st_size > 0:
         df_k = pd.read_csv(f_k, na_filter=False)
@@ -317,13 +315,8 @@ def load_bundle(pid: str):
         for c in ["OD_K1","OD_K2","OD_meanK","OS_K1","OS_K2","OS_meanK"]:
             if c not in df_k.columns: df_k[c] = np.nan
         st.session_state.data_k = df_k[["date","OD_K1","OD_K2","OD_meanK","OS_K1","OS_K2","OS_meanK","remarks"]].sort_values("date")
-    else:
-        st.session_state.data_k = pd.DataFrame(
-            columns=["date","OD_K1","OD_K2","OD_meanK","OS_K1","OS_K2","OS_meanK","remarks"]
-        ).astype({"date":"datetime64[ns]","OD_K1":"float64","OD_K2":"float64","OD_meanK":"float64",
-                  "OS_K1":"float64","OS_K2":"float64","OS_meanK":"float64","remarks":"object"})
 
-    # 각막두께
+    # 각막두께 데이터 로드
     f_ct = pdir / "ct_data.csv"
     if f_ct.exists() and f_ct.stat().st_size > 0:
         df_ct = pd.read_csv(f_ct, na_filter=False)
@@ -336,27 +329,50 @@ def load_bundle(pid: str):
         for c in ["OD_ct","OS_ct"]:
             if c not in df_ct.columns: df_ct[c] = np.nan
         st.session_state.data_ct = df_ct[["date","OD_ct","OS_ct","remarks"]].sort_values("date")
-    else:
-        st.session_state.data_ct = pd.DataFrame(
-            columns=["date","OD_ct","OS_ct","remarks"]
-        ).astype({"date":"datetime64[ns]","OD_ct":"float64","OS_ct":"float64","remarks":"object"})
 
-    # META
+    # META 데이터 로드 (생년월일 포함)
     f_meta = pdir / "meta.json"
     if f_meta.exists() and f_meta.stat().st_size > 0:
         with open(f_meta, "r", encoding="utf-8") as f:
             meta = json.load(f)
+        
+        # 생년월일 처리 개선
+        dob_value = meta.get("dob")
+        if dob_value:
+            try:
+                # 문자열인 경우 datetime으로 변환 후 date로 변환
+                if isinstance(dob_value, str):
+                    dob_date = pd.to_datetime(dob_value).date()
+                else:
+                    dob_date = dob_value
+            except:
+                dob_date = None
+        else:
+            dob_date = None
+        
         st.session_state.meta = {
             "sex": meta.get("sex"),
-            "dob": pd.to_datetime(meta.get("dob")).date() if meta.get("dob") else None,
+            "dob": dob_date,
             "current_age": meta.get("current_age"),
             "name": meta.get("name"),
+        }
+    else:
+        # META 파일이 없는 경우 기본값으로 초기화
+        st.session_state.meta = {
+            "sex": None,
+            "dob": None,
+            "current_age": None,
+            "name": None,
         }
 
     # 새로운 환자 데이터를 불러온 후 입력창 기본값 초기화
     clear_input_defaults()
-
-    return True, f"불러오기 완료: {pdir}"
+    
+    # 환자 정보가 성공적으로 불러와졌는지 확인
+    if st.session_state.meta.get("name"):
+        return True, f"불러오기 완료: {st.session_state.meta.get('name')} ({pid})"
+    else:
+        return True, f"불러오기 완료: {pid} (환자 정보 없음)"
 
 def list_patient_ids() -> list:
     # 사용자별 또는 기관별 데이터 디렉토리에서 환자 목록 가져오기
@@ -1175,8 +1191,46 @@ with st.sidebar:
     
     # 사용자 정보에서 기본값 설정
     name_default = user.get('fullName', '') or (st.session_state.meta.get("name") if isinstance(st.session_state.get("meta"), dict) else None) or ""
+    
+    # 불러온 환자 정보가 있으면 우선 사용
+    if st.session_state.meta.get("name") and not name_default:
+        name_default = st.session_state.meta.get("name")
+    
     name = st.text_input("이름/Initial", value=name_default, key="name")
-    patient_id = st.text_input("환자 ID (저장용)", key="patient_id")
+    
+    # 환자 ID 기본값 설정
+    patient_id_default = ""
+    if st.session_state.meta.get("name"):
+        patient_id_default = st.session_state.meta.get("name")
+    
+    # 세션 상태에서 환자 ID 가져오기
+    if st.session_state.get("patient_id"):
+        patient_id_default = st.session_state.get("patient_id")
+    
+    patient_id = st.text_input("환자 ID (저장용)", value=patient_id_default, key="patient_id")
+    
+    # 환자 불러오기 후 환자 정보가 제대로 표시되도록 하는 로직
+    if st.session_state.meta.get("name"):
+        # 불러온 환자 정보가 있으면 입력창에 표시
+        if not st.session_state.get("patient_name"):
+            st.session_state.patient_name = st.session_state.meta.get("name")
+        if not st.session_state.get("patient_id"):
+            st.session_state.patient_id = st.session_state.meta.get("name")
+        
+        # 환자 정보가 성공적으로 불러와졌는지 확인
+        if st.session_state.meta.get("name"):
+            st.success(f"🎉 환자 '{st.session_state.meta.get('name')}'의 정보가 불러와졌습니다!")
+            if st.session_state.meta.get("dob"):
+                st.info(f"📅 생년월일: {st.session_state.meta.get('dob')}")
+            if st.session_state.meta.get("sex"):
+                st.info(f"👥 성별: {st.session_state.meta.get('sex')}")
+            
+            # 데이터 개수 표시
+            axl_count = len(st.session_state.data_axl)
+            re_count = len(st.session_state.data_re)
+            k_count = len(st.session_state.data_k)
+            ct_count = len(st.session_state.data_ct)
+            st.info(f"📊 데이터 개수 - 안축장: {axl_count}개, 굴절이상: {re_count}개, 각막곡률: {k_count}개, 각막두께: {ct_count}개")
     
     # 성별 추가 (둘 중 하나만 선택)
     st.markdown("**성별**")
@@ -1186,9 +1240,20 @@ with st.sidebar:
         default_sex = None
     sex = st.radio("성별을 선택하세요", sex_options, index=sex_options.index(default_sex) if default_sex else 0, horizontal=True, key="sex_radio")
     
-    _dob_default = (st.session_state.meta.get("dob") if isinstance(st.session_state.get("meta"), dict) else None)
+    # 생년월일 기본값 설정 개선
+    _dob_default = None
+    if isinstance(st.session_state.get("meta"), dict) and st.session_state.meta.get("dob"):
+        _dob_default = st.session_state.meta.get("dob")
+        # date 객체가 아닌 경우 변환
+        if not isinstance(_dob_default, date):
+            try:
+                _dob_default = pd.to_datetime(_dob_default).date()
+            except:
+                _dob_default = None
+    
     if _dob_default is None:
         _dob_default = date.today()
+    
     dob_val = st.date_input("생년월일", value=_dob_default, min_value=date(1900, 1, 1), max_value=date.today(), key="dob")
     
     def _calc_age(dob_: date) -> float:
@@ -1299,10 +1364,35 @@ with st.sidebar:
     if st.button("불러오기", use_container_width=True):
         pid = selected_pid if selected_pid != "(선택)" else (patient_id or name or "")
         ok, msg = load_bundle(pid)
-        st.toast(msg)
-        if ok: 
+        
+        if ok:
+            st.success(f"✅ 환자 데이터 불러오기 성공: {pid}")
+            
+            # 불러온 환자 정보 표시
+            if st.session_state.meta.get("name"):
+                st.info(f"👤 환자명: {st.session_state.meta.get('name')}")
+            if st.session_state.meta.get("dob"):
+                st.info(f"📅 생년월일: {st.session_state.meta.get('dob')}")
+            if st.session_state.meta.get("sex"):
+                st.info(f"👥 성별: {st.session_state.meta.get('sex')}")
+            
+            # 데이터 개수 표시
+            axl_count = len(st.session_state.data_axl)
+            re_count = len(st.session_state.data_re)
+            k_count = len(st.session_state.data_k)
+            ct_count = len(st.session_state.data_ct)
+            st.info(f"📊 데이터 개수 - 안축장: {axl_count}개, 굴절이상: {re_count}개, 각막곡률: {k_count}개, 각막두께: {ct_count}개")
+            
+            # 환자 정보가 성공적으로 불러와졌는지 확인
+            if st.session_state.meta.get("name"):
+                st.success(f"🎉 환자 '{st.session_state.meta.get('name')}'의 데이터가 성공적으로 불러와졌습니다!")
+            else:
+                st.warning("⚠️ 환자 기본 정보가 없습니다. 환자 정보를 입력해주세요.")
+            
             # 페이지를 새로고침하여 입력창들이 초기화된 기본값으로 설정되도록 함
             st.rerun()
+        else:
+            st.error(f"❌ 환자 데이터 불러오기 실패: {msg}")
 
 # 새로운 환자 입력 시에도 기본값 초기화
 # 환자 정보가 변경될 때마다 기본값 초기화
@@ -1310,12 +1400,27 @@ if "previous_name" not in st.session_state:
     st.session_state.previous_name = name
     st.session_state.previous_patient_id = patient_id
 
+    # 환자 정보가 변경되었을 때만 기본값 초기화
 if (st.session_state.previous_name != name or 
     st.session_state.previous_patient_id != patient_id):
     # 환자 정보가 변경되었을 때 입력창 기본값 초기화
     clear_input_defaults()
     st.session_state.previous_name = name
     st.session_state.previous_patient_id = patient_id
+
+# 환자 불러오기 후 환자 정보가 제대로 표시되도록 하는 로직
+if st.session_state.meta.get("name") and not name:
+    # 불러온 환자 정보가 있지만 입력창이 비어있는 경우, 불러온 정보로 채우기
+    st.session_state.patient_name = st.session_state.meta.get("name")
+    st.session_state.patient_id = st.session_state.meta.get("name")  # 기본적으로 이름을 ID로 사용
+
+# 환자 불러오기 후 환자 정보가 제대로 표시되도록 하는 추가 로직
+if st.session_state.meta.get("name"):
+    # 불러온 환자 정보가 있으면 입력창에 표시
+    if not st.session_state.get("patient_name"):
+        st.session_state.patient_name = st.session_state.meta.get("name")
+    if not st.session_state.get("patient_id"):
+        st.session_state.patient_id = st.session_state.meta.get("name")
 
 # =========================
 #  메인 UI - 탭 기반 구조로 개선
