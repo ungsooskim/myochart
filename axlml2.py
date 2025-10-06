@@ -1856,6 +1856,38 @@ with tab2:
                 # Y축 범위 적용
                 fig.update_yaxes(range=[new_y_min, new_y_max])
             
+            # 디버깅 정보 표시
+            with st.expander("🔍 디버깅 정보", expanded=False):
+                st.write(f"환자 성별: {patient_sex}")
+                st.write(f"생년월일: {dob}")
+                st.write(f"데이터프레임 크기: {df.shape}")
+                st.write(f"OD 데이터 존재: {patient_od_data is not None}")
+                st.write(f"OS 데이터 존재: {patient_os_data is not None}")
+                if not df.empty:
+                    st.write("데이터프레임 컬럼:", df.columns.tolist())
+                    if 'OD_mm' in df.columns:
+                        st.write("OD_mm 데이터:", df['OD_mm'].dropna().tolist())
+                    if 'OS_mm' in df.columns:
+                        st.write("OS_mm 데이터:", df['OS_mm'].dropna().tolist())
+                st.write(f"차트 트레이스 수: {len(fig.data)}")
+            
+            # 차트가 비어있는지 확인
+            if len(fig.data) == 0:
+                st.warning("⚠️ 차트에 표시할 데이터가 없습니다. 안축장 데이터를 입력해주세요.")
+                # 기본 백분위 곡선만 표시
+                male_data, female_data = get_axial_length_nomogram()
+                nomogram_data = male_data if patient_sex == "남" else female_data
+                
+                # 50% 백분위만 표시
+                fig.add_trace(go.Scatter(
+                    x=nomogram_data['age'],
+                    y=nomogram_data['p50'],
+                    mode='lines',
+                    name='50% 백분위 (기준선)',
+                    line=dict(color='black', width=2, dash='solid'),
+                    showlegend=True
+                ))
+            
             # 차트 표시 (페이지에 꽉 차게)
             st.plotly_chart(
                 fig, 
