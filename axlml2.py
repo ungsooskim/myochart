@@ -17,6 +17,41 @@ import pytesseract, shutil, os
 import re
 from PIL import Image
 
+# 사용자 인증 모듈 import
+try:
+    from auth import is_logged_in, get_current_user, require_login, get_user_specific_data_path, save_user_data, load_user_data, create_demo_user
+except ImportError:
+    # auth 모듈이 없는 경우 기본 함수들 정의
+    def is_logged_in():
+        return 'user' in st.session_state
+    
+    def get_current_user():
+        return st.session_state.get('user')
+    
+    def require_login():
+        pass
+    
+    def get_user_specific_data_path(filename):
+        return Path(f"./axl_data/{filename}")
+    
+    def save_user_data(data, filename):
+        file_path = get_user_specific_data_path(filename)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2, default=str)
+    
+    def load_user_data(filename):
+        try:
+            file_path = get_user_specific_data_path(filename)
+            if file_path.exists():
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+        except:
+            pass
+        return None
+    
+    def create_demo_user():
+        return {'username': 'demo', 'fullName': '데모 사용자'}
+
 # =========================
 #  한글 폰트 (OS 자동 설정)
 # =========================
@@ -172,8 +207,13 @@ def save_bundle(pid: str):
     pid = _safe_id(pid)
     if not pid:
         return False, "환자 ID가 비어 있습니다."
-    pdir = DATA_ROOT / pid
-    pdir.mkdir(parents=True, exist_ok=True)
+    # 사용자별 데이터 디렉토리 사용
+    if is_logged_in():
+        pdir = get_user_specific_data_path(pid)
+        pdir.mkdir(parents=True, exist_ok=True)
+    else:
+        pdir = DATA_ROOT / pid
+        pdir.mkdir(parents=True, exist_ok=True)
 
     # AXL
     df_axl = st.session_state.get("data_axl", pd.DataFrame()).copy()
@@ -217,7 +257,13 @@ def load_bundle(pid: str):
     pid = _safe_id(pid)
     if not pid:
         return False, "환자 ID가 비어 있습니다."
-    pdir = DATA_ROOT / pid
+    
+    # 사용자별 데이터 디렉토리 사용
+    if is_logged_in():
+        pdir = get_user_specific_data_path(pid)
+    else:
+        pdir = DATA_ROOT / pid
+    
     if not pdir.exists():
         return False, f"폴더가 없습니다: {pdir}"
 
@@ -313,9 +359,16 @@ def load_bundle(pid: str):
     return True, f"불러오기 완료: {pdir}"
 
 def list_patient_ids() -> list:
-    if not DATA_ROOT.exists():
-        return []
-    return sorted([p.name for p in DATA_ROOT.iterdir() if p.is_dir()])
+    # 사용자별 데이터 디렉토리에서 환자 목록 가져오기
+    if is_logged_in():
+        user_data_dir = st.session_state.user_data_dir
+        if not user_data_dir.exists():
+            return []
+        return sorted([p.name for p in user_data_dir.iterdir() if p.is_dir()])
+    else:
+        if not DATA_ROOT.exists():
+            return []
+        return sorted([p.name for p in DATA_ROOT.iterdir() if p.is_dir()])
 
 # =========================
 #  분석/예측 유틸
@@ -709,11 +762,54 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# 사용자 인증 체크
+if not is_logged_in():
+    st.markdown(
+        """
+        <h1 style='font-size:2.8em; font-weight:bold; line-height:1.2; margin-bottom:0.2em; text-align:center;'>
+            📊 안축장·굴절이상 추이 및 20세 예측
+        </h1>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    st.markdown("---")
+    st.markdown("### 🔐 로그인이 필요합니다")
+    st.info("개인 맞춤형 성장 차트를 이용하려면 로그인해주세요.")
+    
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        if st.button("🔑 로그인", use_container_width=True):
+            st.switch_page("pages/login.py")
+    with col2:
+        if st.button("📝 회원가입", use_container_width=True):
+            st.switch_page("pages/register.py")
+    with col3:
+        if st.button("🔍 데모 체험", use_container_width=True):
+            create_demo_user()
+            st.rerun()
+    
+    st.markdown("---")
+    st.markdown("### 📋 서비스 안내")
+    st.markdown("""
+    - **개인 데이터 보호**: 본인만의 데이터에 접근 가능
+    - **안전한 저장**: 모든 데이터는 암호화되어 저장
+    - **의료 목적**: 성장 추이 분석 및 예측 서비스
+    - **데모 체험**: 로그인 없이 샘플 데이터로 체험 가능
+    """)
+    
+    st.stop()
+
+# 로그인된 사용자용 메인 페이지
+user = get_current_user()
 st.markdown(
-    """
+    f"""
     <h1 style='font-size:2.8em; font-weight:bold; line-height:1.2; margin-bottom:0.2em;'>
         안축장·굴절이상 추이 및 20세 예측
     </h1>
+    <p style='font-size:1.2em; color:#666; margin-bottom:1em;'>
+        안녕하세요, <strong>{user.get('fullName', user.get('username', '사용자'))}</strong>님! 👋
+    </p>
     """,
     unsafe_allow_html=True
 )
@@ -789,9 +885,23 @@ if "default_settings" not in st.session_state:
 #  사이드바: 재구성된 레이아웃
 # =========================
 with st.sidebar:
+    # 사용자 정보 및 로그아웃
+    st.markdown("### 👤 사용자 정보")
+    user = get_current_user()
+    st.info(f"**{user.get('fullName', user.get('username', '사용자'))}**님")
+    st.caption(f"ID: {user.get('username', 'demo')}")
+    
+    if st.button("🚪 로그아웃", use_container_width=True):
+        from auth import clear_user_session
+        clear_user_session()
+        st.rerun()
+    
+    st.markdown("---")
+    
     st.header("환자 정보")
     
-    name_default = (st.session_state.meta.get("name") if isinstance(st.session_state.get("meta"), dict) else None) or ""
+    # 사용자 정보에서 기본값 설정
+    name_default = user.get('fullName', '') or (st.session_state.meta.get("name") if isinstance(st.session_state.get("meta"), dict) else None) or ""
     name = st.text_input("이름/Initial", value=name_default, key="name")
     patient_id = st.text_input("환자 ID (저장용)", key="patient_id")
     

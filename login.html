@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>안축장 성장 차트 - 로그인</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .logo p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        input[type="text"], input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .register-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #fcc;
+        }
+        
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #cfc;
+        }
+        
+        .demo-login {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .demo-login h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .demo-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .demo-btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>📊 안축장 성장 차트</h1>
+            <p>개인 맞춤형 성장 추이 분석</p>
+        </div>
+        
+        <div id="message"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">사용자명 또는 이메일</label>
+                <input type="text" id="username" name="username" required placeholder="사용자명 또는 이메일을 입력하세요">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">비밀번호</label>
+                <input type="password" id="password" name="password" required placeholder="비밀번호를 입력하세요">
+            </div>
+            
+            <button type="submit" class="btn">로그인</button>
+        </form>
+        
+        <div class="register-link">
+            <p>계정이 없으신가요? <a href="#" onclick="showRegister()">회원가입</a></p>
+        </div>
+        
+        <div class="demo-login">
+            <h4>🔍 데모 계정으로 체험하기</h4>
+            <p>로그인 없이 데모 데이터로 체험해보세요</p>
+            <button class="demo-btn" onclick="demoLogin()">데모 로그인</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            // 서버로 로그인 요청
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showMessage('로그인 성공! 메인 페이지로 이동합니다.', 'success');
+                    // 세션 저장
+                    localStorage.setItem('user_session', JSON.stringify(result.user));
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1500);
+                } else {
+                    showMessage(result.message || '로그인에 실패했습니다.', 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('서버 오류가 발생했습니다.', 'error');
+                console.error('Error:', error);
+            });
+        });
+        
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+        
+        function showRegister() {
+            window.location.href = '/register';
+        }
+        
+        function demoLogin() {
+            // 데모 사용자 정보
+            const demoUser = {
+                id: 'demo',
+                username: 'demo_user',
+                fullName: '데모 사용자',
+                email: 'demo@example.com',
+                birthDate: '2010-01-01',
+                gender: '남'
+            };
+            
+            localStorage.setItem('user_session', JSON.stringify(demoUser));
+            showMessage('데모 계정으로 로그인했습니다!', 'success');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1500);
+        }
+        
+        // 페이지 로드 시 세션 확인
+        window.addEventListener('load', function() {
+            const session = localStorage.getItem('user_session');
+            if (session) {
+                showMessage('이미 로그인되어 있습니다. 메인 페이지로 이동합니다.', 'success');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1500);
+            }
+        });
+    </script>
+</body>
+</html>

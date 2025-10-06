@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>안축장 성장 차트 - 사용자 등록</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #333;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .logo p {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        input[type="text"], input[type="email"], input[type="password"], input[type="date"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="date"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #fcc;
+        }
+        
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #cfc;
+        }
+        
+        .privacy-notice {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .privacy-notice h4 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>📊 안축장 성장 차트</h1>
+            <p>개인 맞춤형 성장 추이 분석</p>
+        </div>
+        
+        <div id="message"></div>
+        
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="username">사용자명 *</label>
+                <input type="text" id="username" name="username" required placeholder="사용자명을 입력하세요">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">이메일 *</label>
+                <input type="email" id="email" name="email" required placeholder="이메일을 입력하세요">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">비밀번호 *</label>
+                <input type="password" id="password" name="password" required placeholder="비밀번호를 입력하세요" minlength="6">
+            </div>
+            
+            <div class="form-group">
+                <label for="confirmPassword">비밀번호 확인 *</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="비밀번호를 다시 입력하세요">
+            </div>
+            
+            <div class="form-group">
+                <label for="fullName">실명 *</label>
+                <input type="text" id="fullName" name="fullName" required placeholder="실명을 입력하세요">
+            </div>
+            
+            <div class="form-group">
+                <label for="birthDate">생년월일 *</label>
+                <input type="date" id="birthDate" name="birthDate" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="gender">성별 *</label>
+                <select id="gender" name="gender" required style="width: 100%; padding: 15px; border: 2px solid #e1e5e9; border-radius: 10px; font-size: 16px;">
+                    <option value="">성별을 선택하세요</option>
+                    <option value="남">남성</option>
+                    <option value="여">여성</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn">회원가입</button>
+        </form>
+        
+        <div class="login-link">
+            <p>이미 계정이 있으신가요? <a href="#" onclick="showLogin()">로그인</a></p>
+        </div>
+        
+        <div class="privacy-notice">
+            <h4>🔒 개인정보 보호 안내</h4>
+            <p>• 입력하신 모든 개인정보는 안전하게 암호화되어 저장됩니다.</p>
+            <p>• 본인만의 데이터에 접근할 수 있으며, 다른 사용자의 데이터는 볼 수 없습니다.</p>
+            <p>• 데이터는 의료 목적으로만 사용되며, 제3자와 공유되지 않습니다.</p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            // 비밀번호 확인
+            if (data.password !== data.confirmPassword) {
+                showMessage('비밀번호가 일치하지 않습니다.', 'error');
+                return;
+            }
+            
+            // 생년월일 유효성 검사
+            const birthDate = new Date(data.birthDate);
+            const today = new Date();
+            if (birthDate >= today) {
+                showMessage('생년월일은 오늘 이전이어야 합니다.', 'error');
+                return;
+            }
+            
+            // 서버로 데이터 전송
+            fetch('/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showMessage('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else {
+                    showMessage(result.message || '회원가입에 실패했습니다.', 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('서버 오류가 발생했습니다.', 'error');
+                console.error('Error:', error);
+            });
+        });
+        
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+        
+        function showLogin() {
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>
