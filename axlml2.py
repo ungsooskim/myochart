@@ -806,58 +806,32 @@ if not is_logged_in():
             const rememberLogin = localStorage.getItem('remember_login') === 'true';
             
             if (savedUsername && rememberLogin) {
-                // Streamlit 세션에 저장된 정보 전달
-                window.parent.postMessage({
-                    type: 'streamlit:setComponentValue',
-                    value: {
-                        saved_username: savedUsername,
-                        saved_password: savedPassword,
-                        remember_login: rememberLogin
-                    }
-                }, '*');
+                // 입력 필드에 저장된 값 설정
+                setTimeout(function() {
+                    const usernameInput = document.querySelector('input[data-testid="textInput"][aria-label*="사용자명"]');
+                    const passwordInput = document.querySelector('input[data-testid="textInput"][type="password"]');
+                    const checkboxInput = document.querySelector('input[data-testid="stCheckbox"]');
+                    
+                    if (usernameInput) usernameInput.value = savedUsername;
+                    if (passwordInput) passwordInput.value = savedPassword;
+                    if (checkboxInput) checkboxInput.checked = rememberLogin;
+                }, 1000);
             }
         });
-        
-        // 로그인 정보 저장 함수
-        function saveLoginInfo(username, password, remember) {
-            if (remember) {
-                localStorage.setItem('saved_username', username);
-                localStorage.setItem('saved_password', password);
-                localStorage.setItem('remember_login', 'true');
-            } else {
-                localStorage.removeItem('saved_username');
-                localStorage.removeItem('saved_password');
-                localStorage.removeItem('remember_login');
-            }
-        }
-        
-        // 로그인 정보 삭제 함수
-        function clearLoginInfo() {
-            localStorage.removeItem('saved_username');
-            localStorage.removeItem('saved_password');
-            localStorage.removeItem('remember_login');
-        }
         </script>
         """, height=0)
         
-        # 저장된 로그인 정보 불러오기 (폼 외부에서)
-        saved_username = st.session_state.get('saved_username', '')
-        saved_password = st.session_state.get('saved_password', '')
-        remember_login = st.session_state.get('remember_login', False)
-        
         with st.form("login_form"):
             username = st.text_input("사용자명 또는 이메일", 
-                                   value=saved_username,
                                    placeholder="사용자명 또는 이메일을 입력하세요",
                                    key="login_username")
             password = st.text_input("비밀번호", 
                                    type="password", 
-                                   value=saved_password,
                                    placeholder="비밀번호를 입력하세요",
                                    key="login_password")
             
             # 로그인 정보 저장 옵션
-            remember_login = st.checkbox("로그인 정보 저장", value=remember_login, 
+            remember_login = st.checkbox("로그인 정보 저장", 
                                        help="브라우저에 로그인 정보를 저장합니다 (보안상 권장하지 않음)",
                                        key="remember_login")
             
@@ -882,14 +856,9 @@ if not is_logged_in():
                 
                 if user:
                     save_user_session(user)
-                    st.success("로그인 성공!")
                     
-                    # 로그인 정보 저장 처리 (폼 제출 후)
+                    # 로그인 정보 저장 처리 (JavaScript만 사용)
                     if remember_login:
-                        st.session_state.saved_username = username
-                        st.session_state.saved_password = password
-                        st.session_state.remember_login = True
-                        
                         # JavaScript로 브라우저에 저장
                         st.components.v1.html(f"""
                         <script>
@@ -898,14 +867,8 @@ if not is_logged_in():
                         localStorage.setItem('remember_login', 'true');
                         </script>
                         """, height=0)
+                        st.success("로그인 성공! 로그인 정보가 저장되었습니다.")
                     else:
-                        # 저장하지 않기로 선택한 경우 기존 저장 정보 삭제
-                        if 'saved_username' in st.session_state:
-                            del st.session_state.saved_username
-                        if 'saved_password' in st.session_state:
-                            del st.session_state.saved_password
-                        st.session_state.remember_login = False
-                        
                         # JavaScript로 브라우저에서 삭제
                         st.components.v1.html("""
                         <script>
@@ -914,6 +877,7 @@ if not is_logged_in():
                         localStorage.removeItem('remember_login');
                         </script>
                         """, height=0)
+                        st.success("로그인 성공!")
                     
                     st.rerun()
                 else:
@@ -927,15 +891,7 @@ if not is_logged_in():
             st.rerun()
         
         if clear_saved:
-            # 저장된 로그인 정보 삭제
-            if 'saved_username' in st.session_state:
-                del st.session_state.saved_username
-            if 'saved_password' in st.session_state:
-                del st.session_state.saved_password
-            if 'remember_login' in st.session_state:
-                del st.session_state.remember_login
-            
-            # JavaScript로 브라우저에서도 삭제
+            # JavaScript로 브라우저에서 삭제
             st.components.v1.html("""
             <script>
             localStorage.removeItem('saved_username');
@@ -1202,15 +1158,7 @@ with st.sidebar:
                 if key.startswith('user'):
                     del st.session_state[key]
         
-        # 저장된 로그인 정보도 삭제
-        if 'saved_username' in st.session_state:
-            del st.session_state.saved_username
-        if 'saved_password' in st.session_state:
-            del st.session_state.saved_password
-        if 'remember_login' in st.session_state:
-            del st.session_state.remember_login
-        
-        # JavaScript로 브라우저에서도 삭제
+        # JavaScript로 브라우저에서 저장된 로그인 정보 삭제
         st.components.v1.html("""
         <script>
         localStorage.removeItem('saved_username');
