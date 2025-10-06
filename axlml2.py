@@ -1562,11 +1562,11 @@ with tab2:
                 # 환자 나이 계산
                 patient_ages = df["date"].apply(lambda d: _years_between(pd.Timestamp(dob), d))
                 
-                # 마이너스 나이 필터링 (미래 날짜 제거)
+                # 마이너스 나이 필터링 (생년월일 이전 날짜 제거)
                 valid_age_mask = patient_ages >= 0
                 if not valid_age_mask.all():
                     invalid_count = (~valid_age_mask).sum()
-                    st.warning(f"⚠️ {invalid_count}개의 미래 날짜 데이터가 제외되었습니다. (생년월일 이후 날짜)")
+                    st.warning(f"⚠️ {invalid_count}개의 생년월일 이전 날짜 데이터가 제외되었습니다. (검사일이 생년월일보다 이전)")
                 
                 # 유효한 나이만 사용
                 patient_ages = patient_ages[valid_age_mask]
@@ -1902,11 +1902,12 @@ with tab2:
                         st.write("계산된 나이들:", ages.dropna().tolist())
                         st.write("나이 범위:", f"{ages.min():.2f} ~ {ages.max():.2f}세")
                         
-                        # 마이너스 나이가 있는지 확인
+                        # 마이너스 나이가 있는지 확인 (생년월일 이전 날짜)
                         negative_ages = ages[ages < 0]
                         if not negative_ages.empty:
-                            st.error(f"⚠️ 마이너스 나이 발견: {negative_ages.tolist()}")
+                            st.error(f"⚠️ 생년월일 이전 날짜 발견 (마이너스 나이): {negative_ages.tolist()}")
                             st.write("해당 날짜들:", df.loc[negative_ages.index, 'date'].tolist())
+                            st.write("→ 이 날짜들은 생년월일보다 이전이므로 제외됩니다.")
                         
                         # OD/OS 데이터와 나이 매칭 확인
                         if patient_od_ages is not None:
@@ -2078,7 +2079,7 @@ with tab2:
                 valid_age_mask = patient_ages >= 0
                 if not valid_age_mask.all():
                     invalid_count = (~valid_age_mask).sum()
-                    st.warning(f"⚠️ 굴절이상 차트: {invalid_count}개의 미래 날짜 데이터가 제외되었습니다.")
+                    st.warning(f"⚠️ 굴절이상 차트: {invalid_count}개의 생년월일 이전 날짜 데이터가 제외되었습니다.")
                 
                 # 유효한 데이터만 사용
                 df_filtered = df[valid_age_mask]
@@ -2323,11 +2324,11 @@ with tab2:
                 
                 if not axl_valid_mask.all():
                     invalid_count = (~axl_valid_mask).sum()
-                    st.warning(f"⚠️ 이중축 차트(안축장): {invalid_count}개의 미래 날짜 데이터가 제외되었습니다.")
+                    st.warning(f"⚠️ 이중축 차트(안축장): {invalid_count}개의 생년월일 이전 날짜 데이터가 제외되었습니다.")
                 
                 if not re_valid_mask.all():
                     invalid_count = (~re_valid_mask).sum()
-                    st.warning(f"⚠️ 이중축 차트(굴절이상): {invalid_count}개의 미래 날짜 데이터가 제외되었습니다.")
+                    st.warning(f"⚠️ 이중축 차트(굴절이상): {invalid_count}개의 생년월일 이전 날짜 데이터가 제외되었습니다.")
                 
                 # 유효한 데이터만 사용
                 df_axl_filtered = df_axl[axl_valid_mask]
