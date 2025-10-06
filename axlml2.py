@@ -359,7 +359,7 @@ def load_bundle(pid: str):
     return True, f"불러오기 완료: {pdir}"
 
 def list_patient_ids() -> list:
-    # 사용자별 데이터 디렉토리에서 환자 목록 가져오기
+    # 사용자별 또는 기관별 데이터 디렉토리에서 환자 목록 가져오기
     if is_logged_in():
         user_data_dir = st.session_state.user_data_dir
         if not user_data_dir.exists():
@@ -843,15 +843,27 @@ if not is_logged_in():
             col1, col2 = st.columns(2)
             
             with col1:
+                st.markdown("#### 👤 개인 정보")
                 username = st.text_input("사용자명 *", placeholder="사용자명을 입력하세요")
                 email = st.text_input("이메일 *", placeholder="이메일을 입력하세요")
                 password = st.text_input("비밀번호 *", type="password", placeholder="비밀번호를 입력하세요 (최소 6자)")
                 confirm_password = st.text_input("비밀번호 확인 *", type="password", placeholder="비밀번호를 다시 입력하세요")
-            
-            with col2:
                 full_name = st.text_input("실명 *", placeholder="실명을 입력하세요")
                 birth_date = st.date_input("생년월일 *", value=date(2010, 1, 1), max_value=date.today())
                 gender = st.selectbox("성별 *", ["", "남", "여"])
+            
+            with col2:
+                st.markdown("#### 🏥 기관 정보")
+                institution_name = st.text_input("기관명 *", placeholder="병원명 또는 기관명을 입력하세요")
+                institution_address = st.text_area("직장주소 *", placeholder="기관의 주소를 입력하세요", height=100)
+                license_number = st.text_input("면허번호 *", placeholder="의사면허번호를 입력하세요")
+                
+                st.markdown("#### 🔒 데이터 공유 설정")
+                data_sharing = st.radio(
+                    "기관 내 데이터 공유",
+                    ["개인 데이터만 사용", "기관 내 공유 데이터 사용"],
+                    help="기관 내 공유 데이터를 선택하면 동일 기관 사용자들과 환자 데이터를 공유할 수 있습니다."
+                )
             
             submitted = st.form_submit_button("회원가입", use_container_width=True)
         
@@ -891,6 +903,17 @@ if not is_logged_in():
             if birth_date >= date.today():
                 errors.append("생년월일은 오늘 이전이어야 합니다.")
             
+            if not institution_name:
+                errors.append("기관명을 입력해주세요.")
+            
+            if not institution_address:
+                errors.append("직장주소를 입력해주세요.")
+            
+            if not license_number:
+                errors.append("면허번호를 입력해주세요.")
+            elif len(license_number) < 6:
+                errors.append("면허번호는 최소 6자 이상이어야 합니다.")
+            
             if errors:
                 for error in errors:
                     st.error(error)
@@ -902,7 +925,11 @@ if not is_logged_in():
                     'password': password,
                     'fullName': full_name,
                     'birthDate': birth_date.isoformat(),
-                    'gender': gender
+                    'gender': gender,
+                    'institutionName': institution_name,
+                    'institutionAddress': institution_address,
+                    'licenseNumber': license_number,
+                    'dataSharing': data_sharing == "기관 내 공유 데이터 사용"
                 }
                 
                 # 사용자 저장
@@ -1020,6 +1047,34 @@ with st.sidebar:
     user = get_current_user()
     st.info(f"**{user.get('fullName', user.get('username', '사용자'))}**님")
     st.caption(f"ID: {user.get('username', 'demo')}")
+    
+    # 기관 정보 표시
+    if user.get('institutionName'):
+        st.markdown("### 🏥 기관 정보")
+        st.success(f"**{user.get('institutionName')}**")
+        st.caption(f"면허번호: {user.get('licenseNumber', 'N/A')}")
+        
+        # 데이터 공유 상태 표시
+        if user.get('dataSharing', False):
+            st.markdown("### 🔄 데이터 공유")
+            st.success("기관 내 공유 데이터 사용 중")
+            st.caption("동일 기관 사용자들과 데이터 공유")
+            
+            # 기관 내 사용자 목록 표시
+            try:
+                from auth import get_institution_users
+                institution_users = get_institution_users(user.get('institutionName'))
+                if institution_users:
+                    with st.expander(f"👥 기관 사용자 ({len(institution_users)}명)"):
+                        for inst_user in institution_users:
+                            if inst_user['username'] != user.get('username'):
+                                st.caption(f"• {inst_user.get('fullName', inst_user.get('username'))}")
+            except:
+                pass
+        else:
+            st.markdown("### 🔒 데이터 보호")
+            st.info("개인 데이터만 사용 중")
+            st.caption("본인 데이터만 접근 가능")
     
     if st.button("🚪 로그아웃", use_container_width=True):
         try:
