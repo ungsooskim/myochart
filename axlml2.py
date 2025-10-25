@@ -1004,7 +1004,7 @@ if not is_logged_in():
             
             if not license_number:
                 errors.append("면허번호를 입력해주세요.")
-            elif len(license_number) < 6:
+            elif len(license_number) < 5:
                 errors.append("면허번호는 최소 6자 이상이어야 합니다.")
             
             if errors:
