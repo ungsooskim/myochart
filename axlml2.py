@@ -2757,11 +2757,11 @@ with tab2:
                 
                 if not axl_valid_mask.all():
                     invalid_count = (~axl_valid_mask).sum()
-                    st.warning(f"⚠️ 이중축 차트(안축장): {invalid_count}개의 생년월일 이전 날짜 데이터가 제외되었습니다.")
+                    st.warning(f"⚠️ 이중축 차트(axial length): {invalid_count}개의 생년월일 이전 날짜 데이터가 제외되었습니다.")
                 
                 if not re_valid_mask.all():
                     invalid_count = (~re_valid_mask).sum()
-                    st.warning(f"⚠️ 이중축 차트(굴절이상): {invalid_count}개의 생년월일 이전 날짜 데이터가 제외되었습니다.")
+                    st.warning(f"⚠️ 이중축 차트(refractive error): {invalid_count}개의 생년월일 이전 날짜 데이터가 제외되었습니다.")
                 
                 # 유효한 데이터만 사용
                 df_axl_filtered = df_axl[axl_valid_mask]
@@ -2787,12 +2787,12 @@ with tab2:
                 # 안축장 (왼쪽 Y축)
                 fig.add_trace(go.Scatter(
                     x=axl_x_data, y=df_axl_filtered["OD_mm"], 
-                    mode="lines+markers", name="OD 안축장 (mm)",
+                    mode="lines+markers", name="OD axial length (mm)",
                     yaxis="y"
                 ))
                 fig.add_trace(go.Scatter(
                     x=axl_x_data, y=df_axl_filtered["OS_mm"], 
-                    mode="lines+markers", name="OS 안축장 (mm)",
+                    mode="lines+markers", name="OS axial length (mm)",
                     yaxis="y"
                 ))
                 
@@ -2829,7 +2829,7 @@ with tab2:
                         dtick=1
                     ),
                     yaxis=dict(
-                        title="안축장 (mm)", 
+                        title="axial length (mm)", 
                         side="left",
                         titlefont=dict(size=12),
                         tickfont=dict(size=10),
@@ -2847,7 +2847,7 @@ with tab2:
                         dtick=1
                     ),
                     yaxis2=dict(
-                        title="굴절이상 절대값 (D)", 
+                        title="refractive error (D)", 
                         side="right", 
                         overlaying="y",
                         titlefont=dict(size=12),
@@ -3117,7 +3117,7 @@ with tab3:
             ages_axl = _age_at_dates(df_axl["date"], st.session_state.meta.get("dob"), st.session_state.meta.get("current_age"))
             
             if ages_axl is not None:
-                st.markdown("#### 안축장 20세 예측")
+                st.markdown("#### axial length prediction in 20 years")
                 
                 # 예측 모델 선택
                 model_choice_axl = st.radio("예측 모델", ["회귀(선형/로그)", "추천(자동/치료조정)"], horizontal=True, key="axl_model_tab3")
@@ -3205,15 +3205,15 @@ with tab3:
                                     ax2.plot(x_line, y_line_os, label=f"OS 추세({mode_os})", linestyle="--")
                         
                         # 20세 예측점
-                        ax2.axvline(20.0, color='red', linestyle=":", alpha=0.6, label="20세")
+                        ax2.axvline(20.0, color='red', linestyle=":", alpha=0.6, label="20 years")
                         if res_od_axl["valid"] and np.isfinite(res_od_axl["pred_at_20"]):
                             ax2.scatter([20.0], [res_od_axl["pred_at_20"]], marker="*", s=150, color="blue", label=f"OD 20세: {res_od_axl['pred_at_20']:.2f}mm")
                         if res_os_axl["valid"] and np.isfinite(res_os_axl["pred_at_20"]):
                             ax2.scatter([20.0], [res_os_axl['pred_at_20']], marker="*", s=150, color="orange", label=f"OS 20세: {res_os_axl['pred_at_20']:.2f}mm")
                         
-                        ax2.set_xlabel("연령 (년)")
-                        ax2.set_ylabel("안축장 (mm)")
-                        ax2.set_title("안축장 추이 및 20세 예측")
+                        ax2.set_xlabel("Age (years)")
+                        ax2.set_ylabel("axial length (mm)")
+                        ax2.set_title("Axial length trend and prediction in 20 years")
                         ax2.grid(True, alpha=0.3)
                         ax2.legend()
                         ax2.set_xlim(left=x_from, right=x_to)
@@ -3227,7 +3227,7 @@ with tab3:
             ages_re = _age_at_dates(df_re["date"], st.session_state.meta.get("dob"), st.session_state.meta.get("current_age"))
             
             if ages_re is not None:
-                st.markdown("#### 굴절이상 20세 예측")
+                st.markdown("#### refractive error prediction in 20 years")
                 
                 # 예측 모델 선택
                 model_choice_re = st.radio("예측 모델", ["회귀(선형/로그)", "추천(자동/치료조정)"], horizontal=True, key="re_model_tab3")
@@ -3365,7 +3365,7 @@ with tab3:
                         treatment_history.append({
                             'date': row['date'].strftime('%Y-%m-%d'),
                             'treatment': remark,
-                            'type': '안축장'
+                            'type': 'axial length'
                         })
         
         if has_re:
@@ -3375,7 +3375,7 @@ with tab3:
                         treatment_history.append({
                             'date': row['date'].strftime('%Y-%m-%d'),
                             'treatment': remark,
-                            'type': '굴절이상'
+                            'type': 'refractive error'
                         })
         
         if has_k:
@@ -3385,7 +3385,7 @@ with tab3:
                         treatment_history.append({
                             'date': row['date'].strftime('%Y-%m-%d'),
                             'treatment': remark,
-                            'type': '각막곡률'
+                            'type': 'Corneal curvature'
                         })
         
         if has_ct:
@@ -3395,7 +3395,7 @@ with tab3:
                         treatment_history.append({
                             'date': row['date'].strftime('%Y-%m-%d'),
                             'treatment': remark,
-                            'type': '각막두께'
+                            'type': 'Corneal thickness'
                         })
         
         if treatment_history:
