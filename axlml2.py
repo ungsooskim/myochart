@@ -937,13 +937,6 @@ if not is_logged_in():
                 password = st.text_input("비밀번호 *", type="password", placeholder="비밀번호를 입력하세요 (최소 6자)")
                 confirm_password = st.text_input("비밀번호 확인 *", type="password", placeholder="비밀번호를 다시 입력하세요")
                 full_name = st.text_input("실명 *", placeholder="실명을 입력하세요")
-                birth_date = st.date_input(
-                    "생년월일 *", 
-                    value=date(2010, 1, 1), 
-                    min_value=date(1900, 1, 1), 
-                    max_value=date.today()
-                )
-                gender = st.selectbox("성별 *", ["", "남", "여"])
             
             with col2:
                 st.markdown("#### 🏥 기관 정보")
@@ -990,12 +983,6 @@ if not is_logged_in():
             if not full_name:
                 errors.append("실명을 입력해주세요.")
             
-            if not gender:
-                errors.append("성별을 선택해주세요.")
-            
-            if birth_date >= date.today():
-                errors.append("생년월일은 오늘 이전이어야 합니다.")
-            
             if not institution_name:
                 errors.append("기관명을 입력해주세요.")
             
@@ -1017,8 +1004,6 @@ if not is_logged_in():
                     'email': email,
                     'password': password,
                     'fullName': full_name,
-                    'birthDate': birth_date.isoformat(),
-                    'gender': gender,
                     'institutionName': institution_name,
                     'institutionAddress': institution_address,
                     'licenseNumber': license_number,
